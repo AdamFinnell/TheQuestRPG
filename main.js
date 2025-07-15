@@ -20,7 +20,14 @@ window.addEventListener("load", function () {             // load after
             this.world = new World()
             this.hero = new Hero({
                 game: this,
-                position: { x: 2, y: 2 },   // MC's starting position
+                sprite: {
+                    image: document.getElementById("hero1"), 
+                    x: 0, 
+                    y: 0, 
+                    width: 64, 
+                    height: 64
+                },
+                position: {x: 1 * tileSize, y: 2 * tileSize},   // MC's starting position // using * tileSize prevents MC from being able to stop between grid
             })
             this.input = new Input()
         }
