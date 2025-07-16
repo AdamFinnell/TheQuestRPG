@@ -1,10 +1,14 @@
+ body{
+    background-color: rgb(91, 89, 89);
+ }
  #canvas1 {
-            border: 2px solid black;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            translate: -50% -50%;
-        }
-        .assets{
-            display: none;
-        }
+     border: 2px solid black;
+     position: absolute;
+     top: 50%;
+     left: 50%;
+     translate: -50% -50%;
+ }
+
+ .assets {
+     display: none;
+ }
