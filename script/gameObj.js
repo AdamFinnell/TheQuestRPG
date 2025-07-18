@@ -20,6 +20,8 @@ export class GameObject {
         this.width = this.sprite.width * this.scale
         this.halfWidth = this.width / 2
         this.height = this.sprite.height * this.scale
+        this.verticalOffset = this.sprite.height - tileSize;
+
     }
     moveTowards(destinationPosition, speed) {    // to calculate the step the object/character wants to move towards
         this.distanceToTravel.x = destinationPosition.x - this.position.x // calculate the distance to travel
@@ -47,30 +49,59 @@ export class GameObject {
         return distance
     }
     draw(ctx) {
-        ctx.fillStyle = 'blue'
-        ctx.fillRect(
-            this.position.x,
-            this.position.y,
-            tileSize,
-            tileSize
-        )
-        ctx.strokeStyle = 'yellow'
-        ctx.strokeRect(
-            this.destinationPosition.x,
-            this.destinationPosition.y,
-            tileSize,
-            tileSize
-        )
-        ctx.drawImage(      //draw on top of the blue square
-            this.sprite.image, // what we want to draw
-            this.sprite.x * this.sprite.width, // cycle through 0-8 for sprite frames
-            this.sprite.y * this.sprite.height, // jumping to the right sprite image
-            this.sprite.width, // source width
-            this.sprite.height, // source height
-            this.position.x + halfTile - this.halfWidth,    // and where to draw it at
-            this.position.y + tileSize - this.height,
-            this.width,
-            this.height // ^ these two scale the MC to be bigger then the single cell
-        );
+    if (this.game.debug) {
+        ctx.fillStyle = 'blue';
+        ctx.fillRect(this.position.x, this.position.y, tileSize, tileSize);
+        ctx.strokeStyle = 'yellow';
+        ctx.strokeRect(this.destinationPosition.x, this.destinationPosition.y, tileSize, tileSize);
     }
+
+    const isAttacking = this.isAttacking;
+    const direction = this.game?.input?.lastDirection ?? "down";
+
+    // Pick correct sprite dimensions
+    const frameWidth = isAttacking && this.attackSpriteWidth ? this.attackSpriteWidth : this.sprite.width;
+    const frameHeight = isAttacking && this.attackSpriteHeight ? this.attackSpriteHeight : this.sprite.height;
+
+    // Where to draw
+    const drawWidth = frameWidth * this.scale;
+    const drawHeight = frameHeight * this.scale;
+
+    // Vertical offset based on action
+    const verticalOffset = isAttacking
+        ? (this.attackVerticalOffsets?.[direction] ?? (frameHeight - tileSize))
+        : (this.sprite.height - tileSize);
+
+    // Source X (frame) logic
+    let sourceX;
+    if (isAttacking) {
+        sourceX = (this.attackStartOffset + this.attackFrame * this.attackFrameSpacing) * frameWidth;
+    } else {
+        sourceX = this.sprite.x * frameWidth;
+    }
+
+    // Source Y is based on direction/row
+    const sourceY = this.sprite.y * frameHeight;
+
+    ctx.drawImage(
+        this.sprite.image,
+        sourceX,
+        sourceY,
+        frameWidth,
+        frameHeight,
+        this.position.x + tileSize / 2 - drawWidth / 2,
+        this.position.y - verticalOffset,
+        drawWidth,
+        drawHeight
+    );
+}
+
+
+
+    updateDimensions() {
+        this.width = this.sprite.width * this.scale;
+        this.height = this.sprite.height * this.scale;
+        this.halfWidth = this.width / 2;
+    }
+
 }

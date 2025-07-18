@@ -1,6 +1,8 @@
 import { Hero } from "./script/hero.js"
 import { Input } from "./script/input.js"
 import { World } from "./script/world.js"
+import { attack } from "./script/input.js";
+
 
 export const tileSize = 32
 export const cols = 15
@@ -22,34 +24,49 @@ window.addEventListener("load", function () {             // load after
             this.hero = new Hero({
                 game: this,
                 sprite: {
-                    image: document.getElementById("hero1"), 
-                    x: 0, 
-                    y: 11, 
-                    width: 64, 
+                    image: document.getElementById("hero1"),
+                    x: 0,
+                    y: 11,
+                    width: 64,
                     height: 64
                 },
-                position: {x: 1 * tileSize, y: 2 * tileSize},   // MC's starting position // using * tileSize prevents MC from being able to stop between grid
+                position: { x: 1 * tileSize, y: 2 * tileSize },
+                scale: 1,   // MC's starting position // using * tileSize prevents MC from being able to stop between grid
             })
-            this.input = new Input()
+            this.input = new Input(this)
 
-                // add helper properties
+            // add helper properties
             this.eventUpdate = false // periodically switch from T/F
             this.eventTimer = 0 // count deltaTimer
-            this.eventInt = 200 // event intreval allows eventUpdate to be true every 200 mls 
+            this.eventInt = 60 // event intreval allows eventUpdate to be true every 200 mls 
+
+            this.debug = false
         }
-        render(ctx) {
-            this.hero.update()
+        toggleDebug() {
+            this.debug = !this.debug
+        }
+        render(ctx, deltaTime) {
+
+            if (this.input.justPressed.includes(attack)) {
+                this.hero.fight()
+            }
+
+
+            this.hero.update(deltaTime)
 
             this.world.drawBackground(ctx)
-            this.world.drawGrid(ctx)
+            if (this.debug) this.world.drawGrid(ctx)
             this.hero.draw(ctx)
             this.world.drawForeground(ctx)      // draw in front of hero
+            if (this.debug) this.world.drawCollisionMap(ctx)
 
-            if (this.eventTimer < this.eventInt){
+            if (this.eventTimer < this.eventInt) {
                 this.eventTimer += deltaTime
-
-            }else {
-                this.eventTimer = 0
+                this.eventUpdate = false
+            } else {
+                this.eventTimer = this.eventInt % this.eventTimer
+                this.eventUpdate = true
+                this.input.clearJustPressed();
             }
         }
     }
@@ -61,9 +78,11 @@ window.addEventListener("load", function () {             // load after
 
         const deltaTime = timeStamp - lastTime
         lastTime = timeStamp
-        
+
         game.render(ctx, deltaTime)
-       
+
+
+
     }
     requestAnimationFrame(animate)
 })

@@ -1,49 +1,61 @@
-export const left = "left"
-export const right = "right"
-export const up = "up"
-export const down = "down"
+export const left = "left";
+export const right = "right";
+export const up = "up";
+export const down = "down";
+export const attack = "attack";
 
 export class Input {
-    constructor(){
-        this.keys = []
+    constructor(game) {
+        this.game = game;
+        this.keys = [];
+        this.justPressed = [];
+        this.lastDirection = down; // default facing down
 
 
-        window.addEventListener("keydown", e => {
-            if (e.key === "ArrowUp" || e.key.toLowerCase() === "w"){
-                this.keyPressed(up)
-            } else if (e.key === "ArrowDown" || e.key.toLowerCase() === "s"){
-                this.keyPressed(down)
-            }else if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a"){
-                this.keyPressed(left)
-            }else if (e.key === "ArrowRight" || e.key.toLowerCase() === "d"){
-                this.keyPressed(right)
-            }
-        })
-        window.addEventListener("keyup", e => {
-            if (e.key === "ArrowUp" || e.key.toLowerCase() === "w"){
-                this.keyReleased(up)
-            } else if (e.key === "ArrowDown" || e.key.toLowerCase() === "s"){
-                this.keyReleased(down)
-            }else if (e.key === "ArrowLeft" || e.key.toLowerCase() === "a"){
-                this.keyReleased(left)
-            }else if (e.key === "ArrowRight" || e.key.toLowerCase() === "d"){
-                this.keyReleased(right)
-            }
-        })
-        
+        window.addEventListener("keydown", (e) => {
+            const key = e.key.toLowerCase();
+            if (key === "w" || e.key === "ArrowUp") this.keyPressed(up);
+            else if (key === "s" || e.key === "ArrowDown") this.keyPressed(down);
+            else if (key === "a" || e.key === "ArrowLeft") this.keyPressed(left);
+            else if (key === "d" || e.key === "ArrowRight") this.keyPressed(right);
+            else if (key === " ") this.keyPressed(attack);
+            else if (e.key === "Enter") this.game.toggleDebug();
+        });
+
+        window.addEventListener("keyup", (e) => {
+            const key = e.key.toLowerCase();
+            if (["w", "arrowup"].includes(key)) this.keyReleased(up);
+            else if (["s", "arrowdown"].includes(key)) this.keyReleased(down);
+            else if (["a", "arrowleft"].includes(key)) this.keyReleased(left);
+            else if (["d", "arrowright"].includes(key)) this.keyReleased(right);
+            else if (e.key === " ") this.keyReleased(attack);
+        });
     }
-    keyPressed(key){
-        if (this.keys.indexOf(key) === -1){
-            this.keys.unshift(key)
-        }
-        console.log(key)
+
+    keyPressed(key) {
+    if ([up, down, left, right].includes(key)) {
+        this.lastDirection = key;
     }
-    keyReleased(key){
+
+    if (!this.keys.includes(key)) {
+        this.keys.push(key); 
+    }
+}
+
+
+    keyReleased(key) {
         const index = this.keys.indexOf(key)
-        this.keys.splice(index, 1)
-        
+        if (index > -1) {
+            this.keys.splice(index, 1)
+            this.justPressed.push(key)  // Track new press
+        }
     }
-    get lastKey(){
-        return this.keys[0]
+    clearJustPressed() {
+        this.justPressed = [];
+    }
+
+
+    get lastKey() {
+        return this.keys[0];
     }
 }
