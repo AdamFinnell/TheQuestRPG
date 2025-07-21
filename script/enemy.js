@@ -4,9 +4,14 @@ import { GameObject } from "./gameObj.js";
 export class Enemies extends GameObject {
     constructor({ game, sprite, position, scale }) {
         super({ game, sprite, position, scale });
+
         this.speed = 100;
         this.maxFrame = 8;
-        this.moving = true;
+        this.moving = false;
+
+        this.roamTimer = 0;
+        this.roamInterval = 2000; // random roam every 2 seconds
+        this.lastDirection = "down";
 
         this.attackCooldown = 500;
         this.lastAttackTime = 0;
@@ -16,14 +21,8 @@ export class Enemies extends GameObject {
         this.attackFrameTimer = 0;
         this.attackFrameInterval = 60;
         this.attackFrames = 5;
-
-        this.attackFrameSpacing = 1;
         this.attackStartOffset = 1.5;
-
-        this.roamTimer = 0;
-        this.roamInterval = 2000;
-        this.roamDirection = "down";
-        this.aggroRange = 1;
+        this.attackFrameSpacing = 1;
 
         this.animations = {
             idle: { up: 8, down: 10, left: 9, right: 11 },
@@ -37,91 +36,63 @@ export class Enemies extends GameObject {
 
     fight() {
         if (this.isAttacking) return;
-
         const now = Date.now();
         if (now - this.lastAttackTime < this.attackCooldown) return;
 
-        this.isAttacking = true;
         this.lastAttackTime = now;
-
+        this.isAttacking = true;
         this.attackFrame = 0;
         this.attackFrameTimer = 0;
 
-        // Stop movement
-        this.destinationPosition.x = this.position.x;
-        this.destinationPosition.y = this.position.y;
+        // Lock position
+        this.destinationPosition = { ...this.position };
 
-        // Set attack animation start
-        const dir = this.game.input.lastDirection || "down";
-        this.sprite.y = this.animations.attack[dir];
+        this.sprite.y = this.animations.attack[this.lastDirection];
         this.sprite.x = 0;
     }
 
     update(deltaTime) {
-        // === 🧠 Aggro Tracking ===
-        const hero = this.game.hero;
-        if (!hero || !hero.position) return;
-
-        const dx = Math.abs(this.position.x - hero.position.x) / tileSize;
-        const dy = Math.abs(this.position.y - hero.position.y) / tileSize;
-
-        if (dx <= this.aggroRange && dy <= this.aggroRange) {
-            this.fight();
-            return;
-        }
-
-        // === 🔥 Handle Attacking ===
+        // === Attack Animation Handling ===
         if (this.isAttacking) {
             this.attackFrameTimer += deltaTime;
-
             if (this.attackFrameTimer >= this.attackFrameInterval) {
                 this.attackFrameTimer = 0;
                 this.attackFrame++;
-
                 if (this.attackFrame >= this.attackFrames) {
-                    // End attack
                     this.isAttacking = false;
                     this.attackFrame = 0;
-
-                    const dir = this.game.input.lastDirection || "down";
-                    this.sprite.y = this.animations.walk[dir];
                     this.sprite.x = 0;
+                    this.sprite.y = this.animations.walk[this.lastDirection];
                 } else {
                     this.sprite.x = this.attackStartOffset + this.attackFrame * this.attackFrameSpacing;
-                    console.log(
-                        `Attack Frame: ${this.attackFrame} | sprite.x = ${this.sprite.x}`
-                    );
                 }
             }
-
             this.moving = false;
             return;
         }
 
-        // === 🧭 Roaming AI ===
+        // === Roaming Movement Logic ===
         this.roamTimer += deltaTime;
-
         if (this.roamTimer >= this.roamInterval) {
             this.roamTimer = 0;
 
-            const directions = ["up", "down", "left", "right"];
-            this.roamDirection = directions[Math.floor(Math.random() * directions.length)];
-            const dir = this.roamDirection;
+            const dirs = ["up","down","left","right"];
+            const dir = dirs[Math.floor(Math.random() * dirs.length)];
+            this.lastDirection = dir;
 
             const offset = {
-                up: { x: 0, y: -tileSize },
-                down: { x: 0, y: tileSize },
-                left: { x: -tileSize, y: 0 },
-                right: { x: tileSize, y: 0 },
-            };
+                up: { x:0, y:-tileSize },
+                down: { x:0, y: tileSize },
+                left: { x:-tileSize, y:0 },
+                right: { x: tileSize, y:0 }
+            }[dir];
 
             const nextPos = {
-                x: this.position.x + offset[dir].x,
-                y: this.position.y + offset[dir].y,
+                x: this.position.x + offset.x,
+                y: this.position.y + offset.y
             };
-
-            const col = nextPos.x / tileSize;
-            const row = nextPos.y / tileSize;
+            const col = Math.floor(nextPos.x / tileSize);
+            const row = Math.floor(nextPos.y / tileSize);
 
             if (this.game.world.getTile(this.game.world.level1.collisionLayer, row, col) !== 1) {
                 this.destinationPosition = nextPos;
@@ -129,18 +100,24 @@ export class Enemies extends GameObject {
             }
         }
 
-        // === 🚶‍♀️ Movement ===
-        const scaledSpeed = this.speed * (deltaTime / 1000);
-        const distance = this.moveTowards(this.destinationPosition, scaledSpeed);
-        const arrived = distance <= scaledSpeed;
-
+        // === Apply Movement ===
+        const speed = this.speed * (deltaTime / 1000);
+        const dist = this.moveTowards(this.destinationPosition, speed);
+        const arrived = dist <= speed;
         this.moving = !arrived;
 
-        // === 🎞️ Walking Animation ===
-        if (this.game.eventUpdate && this.moving) {
+        if (this.moving && this.game.eventUpdate) {
             this.sprite.x < this.maxFrame ? this.sprite.x++ : (this.sprite.x = 1);
         } else if (!this.moving) {
-            this.sprite.x = 0; // Idle frame
+            this.sprite.x = 0;
+        }
+
+        // === Check For Attack ===
+        const dx = Math.abs(this.position.x - this.game.hero.position.x);
+        const dy = Math.abs(this.position.y - this.game.hero.position.y);
+
+        if (dx < tileSize && dy < tileSize) {
+            this.fight();
         }
     }
 }
