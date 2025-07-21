@@ -15,7 +15,7 @@ export class Hero extends GameObject {
 
         this.attackFrame = 0;
         this.attackFrameTimer = 0;
-        this.attackFrameInterval = 120; // Slower for better visibility
+        this.attackFrameInterval = 60; // Slower for better visibility
         
         this.attackFrames = 5; // Match your original setting
         this.attackVerticalOffsets = {

@@ -2,6 +2,7 @@ import { Hero } from "./script/hero.js"
 import { Input } from "./script/input.js"
 import { World } from "./script/world.js"
 import { attack } from "./script/input.js";
+import { Enemies } from "./script/enemy.js";
 
 
 export const tileSize = 32
@@ -32,6 +33,18 @@ window.addEventListener("load", function () {             // load after
                 },
                 position: { x: 1 * tileSize, y: 2 * tileSize },
                 scale: 1,   // MC's starting position // using * tileSize prevents MC from being able to stop between grid
+            }),
+            this.enemies = new Enemies({
+                game: this,
+                sprite: {
+                    image: document.getElementById("enemy"),
+                    x: 0,
+                    y: 10,
+                    width: 64,
+                    height: 64
+                },
+                position: { x: 13 * tileSize, y: 13 * tileSize },
+                scale: 1,   // enemies starting position // using * tileSize prevents enemies from being able to stop between grid
             })
             this.input = new Input(this)
 
@@ -50,6 +63,7 @@ window.addEventListener("load", function () {             // load after
             if (this.input.justPressed.includes(attack)) {
                 this.hero.fight()
             }
+            
 
 
             this.hero.update(deltaTime)
@@ -57,6 +71,7 @@ window.addEventListener("load", function () {             // load after
             this.world.drawBackground(ctx)
             if (this.debug) this.world.drawGrid(ctx)
             this.hero.draw(ctx)
+        this.enemies.draw(ctx)
             this.world.drawForeground(ctx)      // draw in front of hero
             if (this.debug) this.world.drawCollisionMap(ctx)
 
@@ -86,3 +101,6 @@ window.addEventListener("load", function () {             // load after
     }
     requestAnimationFrame(animate)
 })
+
+
+    
